@@ -10,7 +10,6 @@ local stamina = 100
 local cashAmount = 0
 local isLoggedIn = false -- Set to true to debug
 local Player = nil
-local extraInfo = QBHud.ExtraInfo
 local showHud = false
 
 local fasttick = 300
@@ -29,15 +28,15 @@ Citizen.CreateThread(function()
     end
 end)
 
-RegisterNetEvent("QBCore:Client:OnPlayerUnload")
-AddEventHandler("QBCore:Client:OnPlayerUnload", function()
+RegisterNetEvent("esx:onPlayerDeath")
+AddEventHandler("esx:onPlayerDeath", function()
     isLoggedIn = false
     showHud = false
     SendNUIMessage({action = "hudstatus", UI = showHud})
 end)
 
-RegisterNetEvent("QBCore:Client:OnPlayerLoaded")
-AddEventHandler("QBCore:Client:OnPlayerLoaded", function()
+RegisterNetEvent("esx:playerLoaded")
+AddEventHandler("esx:playerLoaded", function()
     isLoggedIn = true
     showHud = true
     SendNUIMessage({action = "hudstatus", UI = showHud})
@@ -63,7 +62,7 @@ end
 Citizen.CreateThread(function()
     while true do 
         if isLoggedIn then
-            QBCore.Functions.GetPlayerData(function(PlayerData)
+            ESX.GetPlayerData(function(PlayerData)
                 if PlayerData ~= nil and PlayerData.money ~= nil then
                     cashAmount = PlayerData.money["cash"]
                 end
@@ -72,9 +71,8 @@ Citizen.CreateThread(function()
             local pos = GetEntityCoords(PlayerPedId())
             local time = CalculateTimeToDisplay()
             local street1, street2 = GetStreetNameAtCoord(pos.x, pos.y, pos.z, Citizen.ResultAsInteger(), Citizen.ResultAsInteger())
-            local fuel = exports['LegacyFuel']:GetFuel(GetVehiclePedIsIn(PlayerPedId()))
-            local radioStatus = exports["rp-radio"]:IsRadioOn()
-
+            local fuel = exports['omega_vehicle']:GetFuel(GetVehiclePedIsIn(PlayerPedId()))
+			
             SendNUIMessage({
                 action = "radio_status",
                 radio = radioStatus
@@ -190,8 +188,8 @@ Citizen.CreateThread(function()
     end
 end)
 
-RegisterNetEvent("hud:client:UpdateNeeds")
-AddEventHandler("hud:client:UpdateNeeds", function(newHunger, newThirst)
+RegisterNetEvent("esx_status:getStatus")
+AddEventHandler("esx_status:getStatus", function(newHunger, newThirst)
     hunger = newHunger
     thirst = newThirst
 end)
@@ -199,7 +197,7 @@ end)
 Citizen.CreateThread(function()
     while true do
         if isLoggedIn then
-            QBCore.Functions.TriggerCallback('hospital:GetPlayerBleeding', function(playerBleeding)
+            ESX.TriggerServerCallback('hospital:GetPlayerBleeding', function(playerBleeding)
                 if playerBleeding == 0 then
                     bleedingPercentage = 0
                 elseif playerBleeding == 1 then
@@ -307,7 +305,7 @@ function TriggerCruiseControl ()
     if cruiseOn then
         cruiseOn = false
         CruisedSpeed = 0
-        QBCore.Functions.Notify("Cruise Deactivated", "error")
+        TriggerEvent('esx',"esx.")
         SendNUIMessage({
             action = "cruise",
             cruise = cruiseOn,
@@ -321,10 +319,8 @@ function TriggerCruiseControl ()
 
                 if QBHud.MPH then
                     CruisedSpeedMph = TransformToMph(CruisedSpeed)
-                    QBCore.Functions.Notify("Cruise Activated: " .. CruisedSpeedMph ..  " MP/H")
                 else
                     CruisedSpeedKm = TransformToKm(CruisedSpeed)
-                    QBCore.Functions.Notify("Cruise Activated: " .. CruisedSpeedKm ..  " km/h") -- Uncomment me for km/h
                 end
                 
                 SendNUIMessage({
@@ -339,7 +335,6 @@ function TriggerCruiseControl ()
                         if not IsTurningOrHandBraking() and GetVehiculeSpeed() < (CruisedSpeed - 1.5) then
                             CruisedSpeed = 0
                             cruiseOn = false
-                            QBCore.Functions.Notify("Cruise Deactivated", "error")
                             SendNUIMessage({
                                 action = "cruise",
                                 cruise = cruiseOn,
@@ -355,7 +350,6 @@ function TriggerCruiseControl ()
                         if IsControlJustPressed(2, 72) then
                             CruisedSpeed = 0
                             cruiseOn = false
-                            QBCore.Functions.Notify("Cruise Deactivated", "error")
                             SendNUIMessage({
                                 action = "cruise",
                                 cruise = cruiseOn,
